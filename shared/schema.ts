@@ -25,6 +25,7 @@ export const scans = pgTable("scans", {
       remediation: string;
     }>;
     score: number;
+    actionPlan: string[];
   }>(),
 });
 
