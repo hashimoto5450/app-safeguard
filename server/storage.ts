@@ -16,6 +16,7 @@ export interface IStorage {
   getScan(id: number): Promise<Scan | undefined>;
   updateScan(id: number, data: Partial<Scan>): Promise<Scan>;
   getUserScans(userId: number): Promise<Scan[]>;
+  clearUserScans(userId: number): Promise<void>;
 
   sessionStore: session.Store;
 }
@@ -75,6 +76,10 @@ export class DatabaseStorage implements IStorage {
 
   async getUserScans(userId: number): Promise<Scan[]> {
     return db.select().from(scans).where(eq(scans.userId, userId));
+  }
+
+  async clearUserScans(userId: number): Promise<void> {
+    await db.delete(scans).where(eq(scans.userId, userId));
   }
 }
 

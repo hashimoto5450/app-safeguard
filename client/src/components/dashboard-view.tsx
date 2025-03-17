@@ -1,14 +1,35 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Scan } from "@shared/schema";
-import { AlertTriangle, CheckCircle, Clock, Shield, ListChecks } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Shield, ListChecks, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export function DashboardView() {
   const { toast } = useToast();
   const { data: scans, isLoading } = useQuery<Scan[]>({
     queryKey: ["/api/scans"],
+  });
+
+  const clearScansMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/scans/clear");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/scans"] });
+      toast({
+        title: "スキャン履歴をクリア",
+        description: "スキャン履歴が正常にクリアされました。",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "エラー",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -30,6 +51,19 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">スキャン結果</h2>
+        <Button 
+          variant="outline"
+          size="sm"
+          onClick={() => clearScansMutation.mutate()}
+          disabled={clearScansMutation.isPending}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          履歴をクリア
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -66,7 +100,7 @@ export function DashboardView() {
         </Card>
       </div>
 
-      {latestScan && latestScan.results && (
+      {latestScan?.results && (
         <>
           <Card>
             <CardHeader>
@@ -125,7 +159,7 @@ export function DashboardView() {
             </CardContent>
           </Card>
 
-          {latestScan.results.actionPlan && ( //added this conditional rendering
+          {latestScan.results.actionPlan && latestScan.results.actionPlan.length > 0 && (
             <Card>
               <CardHeader className="flex flex-row items-center space-x-2">
                 <ListChecks className="h-5 w-5 text-primary" />
