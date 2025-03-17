@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser, scans, type Scan, type InsertScan } from "@shared/schema";
+import { users, type User, type InsertUser, scans, type Scan, type InsertScan, customRules, type CustomRule, type InsertCustomRule } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
@@ -17,6 +17,13 @@ export interface IStorage {
   updateScan(id: number, data: Partial<Scan>): Promise<Scan>;
   getUserScans(userId: number): Promise<Scan[]>;
   clearUserScans(userId: number): Promise<void>;
+
+  // カスタムルール用のメソッドを追加
+  createCustomRule(rule: Omit<InsertCustomRule, "userId"> & { userId: number }): Promise<CustomRule>;
+  getCustomRule(id: number): Promise<CustomRule | undefined>;
+  updateCustomRule(id: number, data: Partial<CustomRule>): Promise<CustomRule>;
+  deleteCustomRule(id: number): Promise<void>;
+  getUserCustomRules(userId: number): Promise<CustomRule[]>;
 
   sessionStore: session.Store;
 }
@@ -80,6 +87,41 @@ export class DatabaseStorage implements IStorage {
 
   async clearUserScans(userId: number): Promise<void> {
     await db.delete(scans).where(eq(scans.userId, userId));
+  }
+
+  async createCustomRule(rule: Omit<InsertCustomRule, "userId"> & { userId: number }): Promise<CustomRule> {
+    const [newRule] = await db
+      .insert(customRules)
+      .values({
+        ...rule,
+        createdAt: new Date(),
+      })
+      .returning();
+    return newRule;
+  }
+
+  async getCustomRule(id: number): Promise<CustomRule | undefined> {
+    const [rule] = await db.select().from(customRules).where(eq(customRules.id, id));
+    return rule;
+  }
+
+  async updateCustomRule(id: number, data: Partial<CustomRule>): Promise<CustomRule> {
+    const [updatedRule] = await db
+      .update(customRules)
+      .set(data)
+      .where(eq(customRules.id, id))
+      .returning();
+
+    if (!updatedRule) throw new Error('Custom rule not found');
+    return updatedRule;
+  }
+
+  async deleteCustomRule(id: number): Promise<void> {
+    await db.delete(customRules).where(eq(customRules.id, id));
+  }
+
+  async getUserCustomRules(userId: number): Promise<CustomRule[]> {
+    return db.select().from(customRules).where(eq(customRules.userId, userId));
   }
 }
 
