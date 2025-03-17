@@ -26,10 +26,10 @@ export async function scan(url: string) {
       results.vulnerabilities.push({
         type: 'missing_header',
         severity: 'medium' as const,
-        name: 'Content-Security-Policy Missing',
-        description: 'The Content-Security-Policy header is not set, which can lead to XSS vulnerabilities.',
+        name: 'Content-Security-Policyヘッダーの不在',
+        description: 'Content-Security-Policyヘッダーが設定されていません。これによりXSS攻撃のリスクが高まる可能性があります。',
         location: url,
-        remediation: 'Add a Content-Security-Policy header to restrict the sources of executable scripts.'
+        remediation: '実行可能なスクリプトのソースを制限するために、Content-Security-Policyヘッダーを追加してください。'
       });
     }
 
@@ -37,10 +37,10 @@ export async function scan(url: string) {
       results.vulnerabilities.push({
         type: 'missing_header',
         severity: 'low' as const,
-        name: 'X-XSS-Protection Missing',
-        description: 'The X-XSS-Protection header is not set, which can lead to XSS vulnerabilities in older browsers.',
+        name: 'X-XSS-Protectionヘッダーの不在',
+        description: 'X-XSS-Protectionヘッダーが設定されていません。古いブラウザでXSS攻撃のリスクが高まる可能性があります。',
         location: url,
-        remediation: 'Add the X-XSS-Protection header with a value of "1; mode=block".'
+        remediation: '"1; mode=block"の値でX-XSS-Protectionヘッダーを追加してください。'
       });
     }
 
@@ -52,10 +52,10 @@ export async function scan(url: string) {
       results.vulnerabilities.push({
         type: 'insecure_form',
         severity: 'high' as const,
-        name: 'Password Form on HTTP',
-        description: 'Password input field detected on a non-HTTPS page.',
+        name: '非HTTPS上のパスワードフォーム',
+        description: '非HTTPS（暗号化されていない）ページでパスワード入力フィールドが検出されました。',
         location: url,
-        remediation: 'Use HTTPS for all pages containing login or registration forms.'
+        remediation: 'ログインや会員登録フォームを含むすべてのページでHTTPSを使用してください。'
       });
     }
 
@@ -72,10 +72,10 @@ export async function scan(url: string) {
 
     return results;
   } catch (error) {
-    console.error('Scan error:', error);
+    console.error('スキャンエラー:', error);
     if (error instanceof Error) {
-      throw new Error(`Failed to scan URL: ${error.message}`);
+      throw new Error(`URLのスキャンに失敗しました: ${error.message}`);
     }
-    throw new Error('Failed to scan URL: Unknown error');
+    throw new Error('URLのスキャンに失敗しました: 不明なエラー');
   }
 }

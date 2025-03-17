@@ -12,12 +12,12 @@ export function DashboardView() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>読み込み中...</div>;
   }
 
   const completedScans = scans?.filter((scan) => scan.status === "complete") || [];
   const latestScan = completedScans[0];
-  
+
   const totalVulnerabilities = completedScans.reduce((acc, scan) => {
     return acc + (scan.results?.vulnerabilities.length || 0);
   }, 0);
@@ -93,12 +93,12 @@ export function DashboardView() {
                           : "bg-blue-500"
                       } text-white`}
                     >
-                      {vuln.severity}
+                      {vuln.severity === "high" ? "重大" : vuln.severity === "medium" ? "警告" : "注意"}
                     </span>
                   </div>
                   <p className="text-sm mt-2">{vuln.description}</p>
                   <div className="mt-2 text-sm text-gray-500">
-                    場所: {vuln.location}
+                    検出場所: {vuln.location}
                   </div>
                   <Button
                     variant="link"
