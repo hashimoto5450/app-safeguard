@@ -1,0 +1,60 @@
+// frontend/src/App.js
+import React, { useState } from 'react';
+import axios from 'axios';
+import Dashboard from './components/Dashboard';
+import ScanForm from './components/ScanForm';
+import Results from './components/Results';
+import './App.css';
+
+function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [scanId, setScanId] = useState(null);
+  const [scanResult, setScanResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  
+  const handleScan = async (formData) => {
+    try {
+      setLoading(true);
+      const { data } = await axios.post('/api/scan/web', formData);
+      setScanId(data.scanId);
+      
+      // ポーリングで結果をチェック
+      const checkResult = async () => {
+        const { data: scanData } = await axios.get(`/api/scan/${data.scanId}`);
+        if (scanData.status === 'completed' || scanData.status === 'failed') {
+          setScanResult(scanData);
+          setLoading(false);
+          setActiveTab('results');
+        } else {
+          setTimeout(checkResult, 2000); // 2秒ごとにチェック
+        }
+      };
+      
+      setTimeout(checkResult, 2000);
+    } catch (error) {
+      console.error('Scan error:', error);
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <div className="app">
+      <nav>
+        <div className="logo">AppSafeguard</div>
+        <ul>
+          <li className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => setActiveTab('dashboard')}>Dashboard</li>
+          <li className={activeTab === 'scan' ? 'active' : ''} onClick={() => setActiveTab('scan')}>New Scan</li>
+          {scanResult && <li className={activeTab === 'results' ? 'active' : ''} onClick={() => setActiveTab('results')}>Results</li>}
+        </ul>
+      </nav>
+      
+      <main>
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'scan' && <ScanForm onScan={handleScan} loading={loading} />}
+        {activeTab === 'results' && scanResult && <Results result={scanResult} />}
+      </main>
+    </div>
+  );
+}
+
+export default App;
