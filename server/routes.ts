@@ -3,11 +3,101 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { scan as webScanner } from "@shared/scanners/webScanner";
-import { insertScanSchema } from "@shared/schema";
+import { insertScanSchema, insertCustomRuleSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
+  // カスタムルール関連のエンドポイント
+  app.post("/api/custom-rules", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const validatedData = insertCustomRuleSchema.parse(req.body);
+      const rule = await storage.createCustomRule({
+        ...validatedData,
+        userId: req.user.id,
+      });
+      res.status(201).json(rule);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(400).json({ message: "An unknown error occurred" });
+      }
+    }
+  });
+
+  app.get("/api/custom-rules", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const rules = await storage.getUserCustomRules(req.user.id);
+      res.json(rules);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(500).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "An unknown error occurred" });
+      }
+    }
+  });
+
+  app.patch("/api/custom-rules/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const rule = await storage.getCustomRule(parseInt(req.params.id));
+      if (!rule) {
+        return res.status(404).json({ message: "Rule not found" });
+      }
+      if (rule.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      const updatedRule = await storage.updateCustomRule(rule.id, req.body);
+      res.json(updatedRule);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(500).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "An unknown error occurred" });
+      }
+    }
+  });
+
+  app.delete("/api/custom-rules/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const rule = await storage.getCustomRule(parseInt(req.params.id));
+      if (!rule) {
+        return res.status(404).json({ message: "Rule not found" });
+      }
+      if (rule.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      await storage.deleteCustomRule(rule.id);
+      res.sendStatus(200);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(500).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "An unknown error occurred" });
+      }
+    }
+  });
+
+  // 既存のスキャン関連のエンドポイント
   app.post("/api/scan", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -36,6 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             results: {
               vulnerabilities: [],
               score: 0,
+              actionPlan: [], // Added actionPlan to results
             },
           });
         });

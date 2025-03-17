@@ -1,5 +1,7 @@
 import { DashboardView } from "@/components/dashboard-view";
 import { ScanForm } from "@/components/scan-form";
+import { CustomRuleForm } from "@/components/custom-rule-form";
+import { CustomRulesList } from "@/components/custom-rules-list";
 import { useAuth } from "@/hooks/use-auth";
 import { Shield, BarChart2, FileText, Settings, Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +10,34 @@ import { useState } from "react";
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'custom-rules':
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <CustomRulesList />
+            </div>
+            <div>
+              <CustomRuleForm />
+            </div>
+          </div>
+        );
+      case 'dashboard':
+      default:
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <DashboardView />
+            </div>
+            <div>
+              <ScanForm />
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -20,22 +50,34 @@ export default function HomePage() {
 
         <nav>
           <ul>
-            <li className={`mb-2 p-2 rounded ${activeTab === 'dashboard' ? 'bg-blue-600' : 'hover:bg-slate-700'}`}
-                onClick={() => setActiveTab('dashboard')}>
+            <li
+              className={`mb-2 p-2 rounded ${
+                activeTab === 'dashboard' ? 'bg-blue-600' : 'hover:bg-slate-700'
+              }`}
+              onClick={() => setActiveTab('dashboard')}
+            >
               <button className="flex items-center w-full text-left">
                 <BarChart2 className="mr-2 h-5 w-5" />
                 <span>ダッシュボード</span>
               </button>
             </li>
-            <li className={`mb-2 p-2 rounded ${activeTab === 'reports' ? 'bg-blue-600' : 'hover:bg-slate-700'}`}
-                onClick={() => setActiveTab('reports')}>
+            <li
+              className={`mb-2 p-2 rounded ${
+                activeTab === 'custom-rules' ? 'bg-blue-600' : 'hover:bg-slate-700'
+              }`}
+              onClick={() => setActiveTab('custom-rules')}
+            >
               <button className="flex items-center w-full text-left">
                 <FileText className="mr-2 h-5 w-5" />
-                <span>レポート</span>
+                <span>カスタムルール</span>
               </button>
             </li>
-            <li className={`mb-2 p-2 rounded ${activeTab === 'settings' ? 'bg-blue-600' : 'hover:bg-slate-700'}`}
-                onClick={() => setActiveTab('settings')}>
+            <li
+              className={`mb-2 p-2 rounded ${
+                activeTab === 'settings' ? 'bg-blue-600' : 'hover:bg-slate-700'
+              }`}
+              onClick={() => setActiveTab('settings')}
+            >
               <button className="flex items-center w-full text-left">
                 <Settings className="mr-2 h-5 w-5" />
                 <span>設定</span>
@@ -49,7 +91,13 @@ export default function HomePage() {
       <div className="flex-1 overflow-auto">
         {/* ヘッダー */}
         <header className="bg-white p-4 shadow flex justify-between items-center">
-          <h2 className="text-xl font-semibold">セキュリティダッシュボード</h2>
+          <h2 className="text-xl font-semibold">
+            {activeTab === 'dashboard'
+              ? 'セキュリティダッシュボード'
+              : activeTab === 'custom-rules'
+              ? 'カスタムルール'
+              : '設定'}
+          </h2>
           <div className="flex items-center">
             <Button variant="ghost" size="icon" className="mr-4">
               <Bell className="h-5 w-5" />
@@ -73,16 +121,7 @@ export default function HomePage() {
         </header>
 
         {/* メインコンテンツ */}
-        <main className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <DashboardView />
-            </div>
-            <div>
-              <ScanForm />
-            </div>
-          </div>
-        </main>
+        <main className="p-6">{renderContent()}</main>
       </div>
     </div>
   );
